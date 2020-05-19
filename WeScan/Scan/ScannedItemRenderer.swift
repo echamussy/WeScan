@@ -17,13 +17,11 @@ public class ScannedItemRenderer{
     public func render(scannedItem:ScannedItem, completion: @escaping (_ image:UIImage?)->Void){
         DispatchQueue.global(qos: .userInitiated).async {
             let originalImage = scannedItem.originalImage
-            let image = originalImage.applyingPortraitOrientation()
-            
+            let image = originalImage?.retrieveImage()?.withFixedOrientation().applyingPortraitOrientation()
+
             var uiImage: UIImage!
             
-            if let quad = scannedItem.quad,
-                let ciImage = CIImage(image: image) {
-
+            if let quad = scannedItem.quad, let image = image, let ciImage = CIImage(image: image) {
                 var cartesianScaledQuad = quad.toCartesian(withHeight: image.size.height)
                 cartesianScaledQuad.reorganize()
                 

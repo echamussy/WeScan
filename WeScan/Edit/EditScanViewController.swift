@@ -43,7 +43,7 @@ final class EditScanViewController: UIViewController {
     }()
 
     /// The image the quadrilateral was detected on.
-    private let image: UIImage
+    private let image: UIImage?
     
     /// The detected quadrilateral that can be edited by the user. Uses the image's coordinates.
     private var quad: Quadrilateral
@@ -62,9 +62,10 @@ final class EditScanViewController: UIViewController {
     
     init(scannedItem:ScannedItem) {
         self.scannedItem = scannedItem
-        self.image = scannedItem.originalImage.applyingPortraitOrientation()
+        let scannedImage = scannedItem.originalImage?.retrieveImage()
+        self.image = scannedImage?.applyingPortraitOrientation()
         
-        let quad = scannedItem.quad ?? EditScanViewController.defaultQuad(forImage: scannedItem.originalImage)
+        let quad = scannedItem.quad ?? EditScanViewController.defaultQuad(forImage: scannedImage)
         self.quad = quad
         super.init(nibName: nil, bundle: nil)
     }
@@ -134,7 +135,7 @@ final class EditScanViewController: UIViewController {
     
     @objc func handleDone() {
         
-        guard let quad = quadView.quad else {
+        guard let quad = quadView.quad, let image = image else {
             // TODO: Return error
             return
         }
@@ -149,36 +150,43 @@ final class EditScanViewController: UIViewController {
         
         self.delegate?.editScanViewController(self, finishedEditing: scannedItem)
     }
-
+    
     private func displayQuad() {
-        let imageSize = image.size
-        let imageFrame = CGRect(origin: quadView.frame.origin, size: CGSize(width: quadViewWidthConstraint.constant, height: quadViewHeightConstraint.constant))
-        
-        let scaleTransform = CGAffineTransform.scaleTransform(forSize: imageSize, aspectFillInSize: imageFrame.size)
-        let transforms = [scaleTransform]
-        let transformedQuad = quad.applyTransforms(transforms)
-        
-        quadView.drawQuadrilateral(quad: transformedQuad, animated: false)
+        if let image = image {
+            let imageSize = image.size
+            let imageFrame = CGRect(origin: quadView.frame.origin, size: CGSize(width: quadViewWidthConstraint.constant, height: quadViewHeightConstraint.constant))
+            
+            let scaleTransform = CGAffineTransform.scaleTransform(forSize: imageSize, aspectFillInSize: imageFrame.size)
+            let transforms = [scaleTransform]
+            let transformedQuad = quad.applyTransforms(transforms)
+            
+            quadView.drawQuadrilateral(quad: transformedQuad, animated: false)
+        }
     }
     
     /// The quadView should be lined up on top of the actual image displayed by the imageView.
     /// Since there is no way to know the size of that image before run time, we adjust the constraints to make sure that the quadView is on top of the displayed image.
     private func adjustQuadViewConstraints() {
-        let frame = AVMakeRect(aspectRatio: image.size, insideRect: imageView.bounds)
-        quadViewWidthConstraint.constant = frame.size.width
-        quadViewHeightConstraint.constant = frame.size.height
+        if let image = image {
+            let frame = AVMakeRect(aspectRatio: image.size, insideRect: imageView.bounds)
+            quadViewWidthConstraint.constant = frame.size.width
+            quadViewHeightConstraint.constant = frame.size.height
+        }
     }
     
     /// Generates a `Quadrilateral` object that's centered and one third of the size of the passed in image.
-    public static func defaultQuad(forImage image: UIImage) -> Quadrilateral {
-        let topLeft = CGPoint(x: image.size.width / 3.0, y: image.size.height / 3.0)
-        let topRight = CGPoint(x: 2.0 * image.size.width / 3.0, y: image.size.height / 3.0)
-        let bottomRight = CGPoint(x: 2.0 * image.size.width / 3.0, y: 2.0 * image.size.height / 3.0)
-        let bottomLeft = CGPoint(x: image.size.width / 3.0, y: 2.0 * image.size.height / 3.0)
-        
-        let quad = Quadrilateral(topLeft: topLeft, topRight: topRight, bottomRight: bottomRight, bottomLeft: bottomLeft)
-        
-        return quad
+    public static func defaultQuad(forImage image: UIImage?) -> Quadrilateral {
+        if let image = image {
+            let topLeft = CGPoint(x: image.size.width / 3.0, y: image.size.height / 3.0)
+            let topRight = CGPoint(x: 2.0 * image.size.width / 3.0, y: image.size.height / 3.0)
+            let bottomRight = CGPoint(x: 2.0 * image.size.width / 3.0, y: 2.0 * image.size.height / 3.0)
+            let bottomLeft = CGPoint(x: image.size.width / 3.0, y: 2.0 * image.size.height / 3.0)
+            
+            let quad = Quadrilateral(topLeft: topLeft, topRight: topRight, bottomRight: bottomRight, bottomLeft: bottomLeft)
+            
+            return quad
+        }
+        return Quadrilateral(topLeft: CGPoint.zero, topRight: CGPoint.zero, bottomRight: CGPoint.zero, bottomLeft: CGPoint.zero)
     }
 
 }

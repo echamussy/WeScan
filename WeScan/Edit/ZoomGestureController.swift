@@ -11,10 +11,10 @@ import AVFoundation
 
 final class ZoomGestureController {
     
-    private let image: UIImage
+    private let image: UIImage?
     private let quadView: QuadrilateralView
     
-    init(image: UIImage, quadView: QuadrilateralView) {
+    init(image: UIImage?, quadView: QuadrilateralView) {
         self.image = image
         self.quadView = quadView
     }
@@ -23,7 +23,7 @@ final class ZoomGestureController {
     private var closestCorner: CornerPosition?
     
     @objc func handle(pan: UIGestureRecognizer) {
-        guard let drawnQuad = quadView.quad else {
+        guard let drawnQuad = quadView.quad, let image = image else {
             return
         }
         

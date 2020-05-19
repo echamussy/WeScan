@@ -34,6 +34,11 @@ class ScannedPageViewController: UIViewController {
         super.viewWillAppear(animated)
         self.render()
     }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        self.renderedImageView.image = nil
+        super.viewDidDisappear(animated)
+    }
 
     // MARK: - Private methods
     
@@ -73,14 +78,14 @@ class ScannedPageViewController: UIViewController {
     public func render(){
         if (self.renderedImageView.image == nil){
             if self.scannedItem.renderedImage != nil{
-                self.renderedImageView.image = self.scannedItem.renderedImage
+                self.renderedImageView.image = self.scannedItem.renderedImage?.retrieveImage()
                 self.activityIndicator.stopAnimating()
             } else {
                 self.activityIndicator.isHidden = false
                 self.activityIndicator.startAnimating()
                 
                 scannedItem.render { (image) in
-                    self.renderedImageView.image = image
+                    self.renderedImageView.image = image?.retrieveImage()
                     self.activityIndicator.stopAnimating()
                 }
             }

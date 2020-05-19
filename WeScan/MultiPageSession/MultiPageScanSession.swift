@@ -17,8 +17,8 @@ public enum ScannedItemColorOption{
 public class ScannedItem{
     
     /// The original image taken by the user, prior to the cropping applied by WeScan.
-    let originalImage:UIImage
-    
+    var originalImage:URL?
+
     /// The detected rectangle which was used to generate the `scannedImage`.
     var quad:Quadrilateral?
     
@@ -29,18 +29,18 @@ public class ScannedItem{
     var colorOption:ScannedItemColorOption = .color
     
     /// The deskewed and cropped orignal image using the detected rectangle, without any filters.
-    var renderedImage:UIImage? = nil
-    
+    var renderedImage:URL? = nil
+
     public init(originalImage:UIImage, quad:Quadrilateral? = nil, colorOption:ScannedItemColorOption = .color) {
-        self.originalImage = originalImage
+        self.originalImage = filePath().saveImage(image: originalImage.withFixedOrientation())
         self.quad = quad
         self.colorOption = colorOption
     }
     
-    public func render(completion: @escaping (_ image:UIImage?)->Void){
+    public func render(completion: @escaping (_ image:URL?)->Void){
         ScannedItemRenderer().render(scannedItem: self) { (image) in
-            self.renderedImage = image
-            completion(image)
+            self.renderedImage = self.filePath().saveImage(image: image?.withFixedOrientation())
+            completion(self.renderedImage)
         }
     }
 }
@@ -59,4 +59,11 @@ public class MultiPageScanSession {
         self.scannedItems.remove(at: index)
     }
     
+}
+
+extension ScannedItem {
+    private func filePath() -> URL {
+        let documentURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        return documentURL.appendingPathComponent("\(UUID().uuidString).jpg")
+    }
 }

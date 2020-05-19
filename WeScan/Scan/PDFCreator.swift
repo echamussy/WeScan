@@ -14,8 +14,8 @@ public typealias PDFCreatorCompletionBlock = ((_ error:Error?) -> Void)
 public class PDFCreator {
     
     var currentIndex = 0
-    var images = Array<UIImage>()
-    
+    var images = [URL]()
+
     private let scanSession:MultiPageScanSession
     private let outputPath:String
     private let outputResolution:CGFloat?
@@ -75,10 +75,10 @@ public class PDFCreator {
             var outputImage:UIImage! = nil
             if let outputResolution = self.outputResolution,
                 outputResolution > 0.0,
-                let reducedImage = image.resizeImage(newWidth: outputResolution){
+                let reducedImage = image.retrieveImage()?.resizeImage(newWidth: outputResolution){
                 outputImage = reducedImage
             } else {
-                outputImage = image
+                outputImage = image.retrieveImage()
             }
             UIGraphicsBeginPDFPageWithInfo(CGRect(x:0, y:0, width:outputImage.size.width, height:outputImage.size.height), nil);
             outputImage.draw(in: CGRect(x: 0, y: 0, width: outputImage.size.width, height: outputImage.size.height))
